@@ -1,0 +1,608 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0094DA">
+    <meta name="description" content="Bajyo Ghanti!">
+    <title>Ghanti</title>
+    
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="ghanti.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --primary: #0094DA;
+            --primary-dark: #0077B3;
+            --primary-light: #33A8E3;
+            --shadow: rgba(0, 0, 0, 0.15);
+        }
+
+        body {
+            font-family: 'Crimson Text', 'Georgia', serif;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+            touch-action: manipulation;
+            position: relative;
+        }
+
+        /* Ambient background effect */
+        body::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: 
+                radial-gradient(circle at 30% 40%, rgba(255, 255, 255, 0.06) 0%, transparent 50%),
+                radial-gradient(circle at 70% 60%, rgba(0, 0, 0, 0.04) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100vh;
+            perspective: 1000px;
+        }
+
+        .bell-wrapper {
+            position: relative;
+            cursor: pointer;
+            user-select: none;
+            transform-style: preserve-3d;
+            will-change: transform;
+            transition: transform 0.05s ease-out;
+        }
+
+        .white-circle {
+            width: min(80vw, 80vh, 400px);
+            height: min(80vw, 80vh, 400px);
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 
+                0 20px 60px var(--shadow),
+                0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+            position: relative;
+            overflow: visible;
+        }
+
+        /* Ripple effect on ring */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            border: 2px solid rgba(0, 148, 218, 0.4);
+            animation: ripple-animation 1s ease-out forwards;
+            pointer-events: none;
+        }
+
+        @keyframes ripple-animation {
+            from {
+                width: 60%;
+                height: 60%;
+                opacity: 1;
+            }
+            to {
+                width: 120%;
+                height: 120%;
+                opacity: 0;
+            }
+        }
+
+        .bell-svg {
+            width: 50%;
+            height: 50%;
+            filter: drop-shadow(0 8px 16px var(--shadow));
+            transform-origin: center 20%;
+            will-change: transform;
+        }
+
+        /* Swing animation keyframes */
+        @keyframes swing-light {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(3deg); }
+            75% { transform: rotate(-3deg); }
+        }
+
+        @keyframes swing-medium {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(6deg); }
+            75% { transform: rotate(-6deg); }
+        }
+
+        @keyframes swing-heavy {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(10deg); }
+            75% { transform: rotate(-10deg); }
+        }
+
+        @keyframes swing-intense {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(15deg); }
+            75% { transform: rotate(-15deg); }
+        }
+
+        .bell-svg.swing-light {
+            animation: swing-light 0.8s ease-in-out;
+        }
+
+        .bell-svg.swing-medium {
+            animation: swing-medium 0.7s ease-in-out;
+        }
+
+        .bell-svg.swing-heavy {
+            animation: swing-heavy 0.6s ease-in-out;
+        }
+
+        .bell-svg.swing-intense {
+            animation: swing-intense 0.5s ease-in-out;
+        }
+
+        /* Instructions */
+        .instructions {
+            position: absolute;
+            bottom: 10vh;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: clamp(12px, 3vw, 14px);
+            font-weight: 300;
+            letter-spacing: 1px;
+            padding: 0 20px;
+            max-width: 90vw;
+        }
+
+        /* Enable motion button */
+        .enable-motion-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--primary);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: all;
+        }
+
+        .enable-motion-btn.hidden {
+            opacity: 0;
+            transform: translateY(-10px);
+            pointer-events: none;
+        }
+
+        .enable-motion-btn:hover {
+            background: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .enable-motion-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Permission prompt */
+        .permission-prompt {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .permission-prompt.show {
+            display: flex;
+        }
+
+        .prompt-content {
+            background: white;
+            padding: clamp(24px, 6vw, 40px);
+            border-radius: 16px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .prompt-content h2 {
+            font-size: clamp(20px, 5vw, 28px);
+            color: var(--primary-dark);
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .prompt-content p {
+            color: #666;
+            font-size: clamp(14px, 3.5vw, 16px);
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .prompt-button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 8px;
+            font-size: clamp(14px, 3.5vw, 16px);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            width: 100%;
+        }
+
+        .prompt-button:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .prompt-button:active {
+            transform: translateY(0);
+        }
+
+        /* Loading state */
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 16px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .loading.show {
+            opacity: 1;
+        }
+
+        /* Touch feedback */
+        @media (hover: none) {
+            .bell-wrapper:active {
+                transform: scale(0.95);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="bell-wrapper" id="bellWrapper">
+            <div class="white-circle" id="whiteCircle">
+                 <svg class="bell-svg" id="bellSvg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 64 64" enable-background="new 0 0 64 64" xml:space="preserve" fill="#000000"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g> <path fill="#0094DA" d="M50,22c0-8.577-6.004-15.74-14.035-17.548C35.984,4.304,36,4.154,36,4c0-2.209-1.791-4-4-4s-4,1.791-4,4 c0,0.154,0.016,0.304,0.035,0.452C20.004,6.26,14,13.423,14,22v12h36V22z M33.983,4.115C33.332,4.043,32.671,4,32,4 s-1.332,0.043-1.983,0.115C30.014,4.075,30,4.04,30,4c0-1.104,0.896-2,2-2s2,0.896,2,2C34,4.04,33.986,4.075,33.983,4.115z"></path> <rect x="14" y="36" fill="#0094DA" width="36" height="4"></rect> <path fill="#0094DA" d="M56,48c-3.313,0-6-2.687-6-6H14c0,3.313-2.687,6-6,6c-2.209,0-4,1.791-4,4s1.791,4,4,4h16 c0,4.418,3.582,8,8,8s8-3.582,8-8h16c2.209,0,4-1.791,4-4S58.209,48,56,48z M32,62c-3.313,0-6-2.687-6-6h12 C38,59.313,35.313,62,32,62z"></path> </g> </g></svg>
+            </div>
+        </div>
+    </div>
+
+    <button class="enable-motion-btn" id="enableMotionBtn">Enable Motion</button>
+
+    <div class="instructions" id="instructions">
+        Shake to Ring
+    </div>
+
+    <div class="permission-prompt" id="permissionPrompt">
+        <div class="prompt-content">
+            <h2>Enable Motion</h2>
+            <p>Allow motion access to ring the bell by shaking your device</p>
+            <button class="prompt-button" id="permissionButton">Allow Motion</button>
+        </div>
+    </div>
+
+    <div class="loading" id="loading">Loading sound...</div>
+
+    <script>
+        // Audio management
+        class BellAudio {
+            constructor() {
+                this.context = null;
+                this.buffer = null;
+                this.loaded = false;
+                this.lastPlayTime = 0;
+                this.minInterval = 100; // Minimum ms between rings
+            }
+
+            async init() {
+                try {
+                    this.context = new (window.AudioContext || window.webkitAudioContext)();
+                    await this.loadSound();
+                    this.loaded = true;
+                } catch (error) {
+                    console.error('Audio initialization failed:', error);
+                }
+            }
+
+            async loadSound() {
+                try {
+                    // Load bell.wav from the same directory
+                    const response = await fetch('bell.wav');
+                    if (!response.ok) {
+                        throw new Error('Could not load bell.wav');
+                    }
+                    const arrayBuffer = await response.arrayBuffer();
+                    this.buffer = await this.context.decodeAudioData(arrayBuffer);
+                } catch (error) {
+                    console.error('Failed to load bell.wav:', error);
+                    // Fallback: generate synthetic bell sound
+                    await this.generateFallbackSound();
+                }
+            }
+
+            async generateFallbackSound() {
+                // Fallback synthetic bell sound
+                const sampleRate = this.context.sampleRate;
+                const duration = 2.5;
+                const length = sampleRate * duration;
+                const buffer = this.context.createBuffer(1, length, sampleRate);
+                const data = buffer.getChannelData(0);
+
+                const fundamentalFreq = 520;
+                const harmonics = [1, 1.5, 2, 2.5, 3.2, 4.1];
+                const harmonicAmps = [1.0, 0.6, 0.4, 0.3, 0.2, 0.1];
+
+                for (let i = 0; i < length; i++) {
+                    const t = i / sampleRate;
+                    let sample = 0;
+
+                    harmonics.forEach((harmonic, idx) => {
+                        const freq = fundamentalFreq * harmonic;
+                        const decay = Math.exp(-3 * t * (1 + idx * 0.3));
+                        sample += Math.sin(2 * Math.PI * freq * t) * harmonicAmps[idx] * decay;
+                    });
+
+                    const shimmer = Math.sin(2 * Math.PI * 3000 * t) * 0.15 * Math.exp(-8 * t);
+                    sample += shimmer;
+
+                    const envelope = Math.exp(-2 * t);
+                    data[i] = sample * envelope * 0.3;
+                }
+
+                this.buffer = buffer;
+            }
+
+            async play(intensity = 1.0) {
+                if (!this.loaded || !this.buffer) return;
+
+                const now = Date.now();
+                if (now - this.lastPlayTime < this.minInterval) return;
+                this.lastPlayTime = now;
+
+                try {
+                    // Resume context if suspended (mobile requirement)
+                    if (this.context.state === 'suspended') {
+                        await this.context.resume();
+                    }
+
+                    const source = this.context.createBufferSource();
+                    const gainNode = this.context.createGain();
+                    
+                    source.buffer = this.buffer;
+                    source.connect(gainNode);
+                    gainNode.connect(this.context.destination);
+
+                    // Scale volume with intensity
+                    const volume = Math.min(0.3 + intensity * 0.7, 1.0);
+                    gainNode.gain.setValueAtTime(volume, this.context.currentTime);
+
+                    source.start(0);
+                } catch (error) {
+                    console.error('Playback failed:', error);
+                }
+            }
+        }
+
+        // Motion detection
+        class MotionDetector {
+            constructor(callback) {
+                this.callback = callback;
+                this.lastX = 0;
+                this.lastY = 0;
+                this.lastZ = 0;
+                this.threshold = 10; // Minimum shake strength
+                this.lastShakeTime = 0;
+                this.shakeInterval = 100; // Minimum ms between shakes
+                this.permissionGranted = false;
+            }
+
+            async requestPermission() {
+                // iOS 13+ requires explicit permission
+                if (typeof DeviceMotionEvent !== 'undefined' && 
+                    typeof DeviceMotionEvent.requestPermission === 'function') {
+                    try {
+                        const permission = await DeviceMotionEvent.requestPermission();
+                        this.permissionGranted = permission === 'granted';
+                        return this.permissionGranted;
+                    } catch (error) {
+                        console.error('Permission request failed:', error);
+                        return false;
+                    }
+                } else {
+                    // Non-iOS or older iOS
+                    this.permissionGranted = true;
+                    return true;
+                }
+            }
+
+            start() {
+                if (!this.permissionGranted) return;
+
+                window.addEventListener('devicemotion', (event) => {
+                    const acc = event.accelerationIncludingGravity;
+                    if (!acc) return;
+
+                    const x = acc.x || 0;
+                    const y = acc.y || 0;
+                    const z = acc.z || 0;
+
+                    // Calculate shake intensity
+                    const deltaX = Math.abs(x - this.lastX);
+                    const deltaY = Math.abs(y - this.lastY);
+                    const deltaZ = Math.abs(z - this.lastZ);
+                    const delta = deltaX + deltaY + deltaZ;
+
+                    this.lastX = x;
+                    this.lastY = y;
+                    this.lastZ = z;
+
+                    // Detect shake
+                    const now = Date.now();
+                    if (delta > this.threshold && now - this.lastShakeTime > this.shakeInterval) {
+                        this.lastShakeTime = now;
+                        // Normalize intensity (0 to 1)
+                        const intensity = Math.min(delta / 50, 1);
+                        this.callback(intensity);
+                    }
+                });
+            }
+        }
+
+        // App initialization
+        const bellAudio = new BellAudio();
+        let motionDetector = null;
+        let audioInitialized = false;
+
+        const bellWrapper = document.getElementById('bellWrapper');
+        const bellSvg = document.getElementById('bellSvg');
+        const whiteCircle = document.getElementById('whiteCircle');
+        const instructions = document.getElementById('instructions');
+        const permissionPrompt = document.getElementById('permissionPrompt');
+        const permissionButton = document.getElementById('permissionButton');
+        const enableMotionBtn = document.getElementById('enableMotionBtn');
+        const loading = document.getElementById('loading');
+
+        // Swing animation based on intensity
+        function swingBell(intensity = 0.5) {
+            bellSvg.classList.remove('swing-light', 'swing-medium', 'swing-heavy', 'swing-intense');
+            
+            let swingClass = 'swing-light';
+            if (intensity > 0.7) swingClass = 'swing-intense';
+            else if (intensity > 0.5) swingClass = 'swing-heavy';
+            else if (intensity > 0.3) swingClass = 'swing-medium';
+            
+            bellSvg.classList.add(swingClass);
+            
+            // Remove class after animation
+            setTimeout(() => {
+                bellSvg.classList.remove(swingClass);
+            }, 1000);
+        }
+
+        // Ripple effect
+        function createRipple() {
+            const ripple = document.createElement('div');
+            ripple.classList.add('ripple');
+            whiteCircle.appendChild(ripple);
+            
+            setTimeout(() => {
+                ripple.remove();
+            }, 1000);
+        }
+
+        // Ring the bell
+        async function ringBell(intensity = 0.5) {
+            // Initialize audio on first interaction (mobile requirement)
+            if (!audioInitialized) {
+                await bellAudio.init();
+                audioInitialized = true;
+            }
+
+            await bellAudio.play(intensity);
+            swingBell(intensity);
+            createRipple();
+        }
+
+        // Tap/click handler
+        bellWrapper.addEventListener('click', () => {
+            ringBell(0.7);
+        });
+
+        // Enable motion button handler
+        enableMotionBtn.addEventListener('click', async () => {
+            const granted = await motionDetector.requestPermission();
+            
+            if (granted) {
+                motionDetector.start();
+                enableMotionBtn.classList.add('hidden');
+            } else {
+                alert('Motion permission denied. You can still tap to ring the bell.');
+                enableMotionBtn.classList.add('hidden');
+            }
+        });
+
+        // Motion permission handler (for modal prompt)
+        permissionButton.addEventListener('click', async () => {
+            const granted = await motionDetector.requestPermission();
+            
+            if (granted) {
+                permissionPrompt.classList.remove('show');
+                motionDetector.start();
+                instructions.textContent = 'Tap or shake to ring the bell';
+            } else {
+                instructions.textContent = 'Tap to ring the bell';
+                permissionPrompt.classList.remove('show');
+            }
+        });
+
+        // Initialize motion detection
+        motionDetector = new MotionDetector((intensity) => {
+            ringBell(intensity);
+        });
+
+        // Check if permission is needed
+        window.addEventListener('load', () => {
+            if (typeof DeviceMotionEvent !== 'undefined' && 
+                typeof DeviceMotionEvent.requestPermission === 'function') {
+                // iOS - show enable motion button
+                enableMotionBtn.style.display = 'block';
+            } else {
+                // Non-iOS - auto-enable and hide button
+                motionDetector.permissionGranted = true;
+                motionDetector.start();
+                enableMotionBtn.classList.add('hidden');
+            }
+        });
+
+        // Service Worker registration for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(() => {
+                    console.log('Service worker registration optional');
+                });
+            });
+        }
+    </script>
+</body>
+</html>
+
+
+
